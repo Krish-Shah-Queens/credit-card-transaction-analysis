@@ -1,8 +1,20 @@
-# Credit Card Transaction Analysis
+# Credit Card Transaction Analysis & Explorer
 
-A beginner-friendly SQL and Python portfolio project using **284,807 real credit card transactions** from the ULB/Worldline dataset. Explore amounts, labeled fraud, elapsed-time patterns, and data quality, then explain the findings in plain language.
+An interactive analytics platform and beginner-friendly SQL and Python project using **284,807 real credit card transactions** from the ULB/Worldline dataset. Explore transaction value, typical amounts, changes in activity, and fraud-label comparisons with filters, searchable tables, and downloadable data.
 
-**Code and original documentation: MIT licensed. External data: separate ODbL/DbCL terms.** The raw dataset is downloaded from the public CSV mirror used by TensorFlow's tutorial; it is not bundled or committed. There is no synthetic dataset or generator.
+**[Open the live platform →](https://credit-card-transaction-explorer.delightfulcloak8.chatgpt.site)**
+
+Use **Overview** to see totals and typical amounts, **Transaction activity** to investigate hourly increases and decreases, **Fraud comparison** to compare both labels, and **Data explorer** to search exact amount groups. Set time and amount filters and click **Apply**; all values are calculated from the external dataset. The hosted copy may ask you to sign in with its owner's ChatGPT account.
+
+To run your own dashboard in Codespaces or on your computer, no dependency installation or dataset download is needed:
+
+```bash
+python -m http.server 8000 --directory dashboard
+```
+
+In Codespaces, open **Ports → 8000 → Open in Browser**. Locally, visit http://localhost:8000 . See [dashboard/README.md](dashboard/README.md) for filters, exports, calculations, and rebuilding the bundled aggregate data.
+
+**Code and original documentation: MIT licensed. External data: separate ODbL/DbCL terms.** The raw CSV is downloaded from the public mirror used by TensorFlow's tutorial; it is not bundled or committed. The dashboard includes a reproducible, separately licensed aggregate derivative covering every source observation. There is no synthetic dataset or generator.
 
 ## Get the project
 
@@ -17,8 +29,6 @@ python scripts/download_data.py
 python scripts/build_database.py
 python scripts/analyze.py
 ```
-
-![Activity during the observed window](reports/example/elapsed_hours.png)
 
 ## What you will learn
 
@@ -116,6 +126,7 @@ The included example report was generated from the complete external CSV, not a 
 
 ```text
 scripts/                 Download, validate/build, analyze; shared paths
+dashboard/               Interactive platform, browser analytics, aggregate data
 sql/                     Seven commented SQL lessons
 notebooks/               Guided SQL + Python walkthrough
 docs/                    Source terms, dictionary, exercises, publication guide
@@ -136,6 +147,8 @@ python -m pytest -q
 ```
 
 Tests use tiny hand-authored fixtures and run offline. They check validation failures, duplicate policy, amount-band boundaries, aggregate conservation, window functions, and precision/recall denominators. Full dataset and notebook verification are described in [VALIDATION.md](docs/VALIDATION.md).
+
+The dashboard also has seven browser-calculation tests. Run them with `node --test dashboard/analytics.test.mjs` using Node 22 or later. CI checks both Python and dashboard calculations. The static image reports remain available as an optional learning artifact; the platform is the primary interactive experience.
 
 First contributions are welcome: improve explanations, add a useful SQL question, or fix a reproducible bug. See [CONTRIBUTING.md](CONTRIBUTING.md).
 

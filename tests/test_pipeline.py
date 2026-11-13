@@ -12,6 +12,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from build_database import build_database
 from common import COLUMNS
 from download_data import download
+from export_dashboard import export_dashboard
 
 
 def write_csv(path, records):
@@ -116,3 +117,14 @@ def test_downloader_preserves_unrecognized_existing_file(tmp_path):
     with pytest.raises(ValueError, match="not overwritten"):
         download(path)
     assert path.read_text() == "my file"
+
+
+def test_dashboard_export_preserves_group_frequencies_and_exact_amounts(database, tmp_path):
+    output = tmp_path / "dashboard.json"
+    data = export_dashboard(database, output)
+    assert data["metadata"]["transaction_count"] == 4
+    assert data["metadata"]["total_amount_cents"] == 120000
+    assert data["metadata"]["group_count"] == 3
+    assert sum(row[3] for row in data["groups"]) == 4
+    assert sum(row[2] * row[3] for row in data["groups"]) == 120000
+    assert [1, 1, 10000, 2] in json.loads(output.read_text())["groups"]

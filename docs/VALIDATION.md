@@ -24,7 +24,7 @@ Counts, fraud-label totals, amount totals, and zero-amount counts were also inde
 
 ## Automated tests
 
-`python -m pytest -q` passes 14 tests, including parametrized invalid-data cases. Tests run offline on small hand-authored fixtures, covering:
+`python -m pytest -q` passes 15 tests, including parametrized invalid-data cases. Tests run offline on small hand-authored fixtures, covering:
 
 - Duplicate retention, zero-amount retention, and distinct local row keys.
 - Totals, label rates, amount-band boundaries, and concentration shares.
@@ -33,8 +33,17 @@ Counts, fraud-label totals, amount totals, and zero-amount counts were also inde
 - Rejection of negative values, fractional/invalid labels, missing values, NaN, infinity, empty input, and wrong headers.
 - Preservation of the existing database after a failed validation.
 - Preservation of an existing unrecognized file by the downloader.
+- Dashboard export conservation of source frequencies and integer-cent amount totals.
 
 The GitHub Actions workflow is configured for Python 3.11 and 3.12. Only Python 3.12 was executed locally here; hosted CI will run after publication. Windows and macOS were not tested in this environment.
+
+## Interactive platform verification
+
+The dashboard represents all 284,807 source observations in 126,501 `(elapsed hour, label, exact amount)` groups, preserving their transaction frequencies. Browser-side calculations were independently reconciled against DuckDB over **360 metric checks in 12 filter scenarios**, including label-only selections, single hours, amount boundaries, zero-amount transactions, and empty selections. Continuous quantiles were compared against SQL DOUBLE calculations to avoid fixed-point output truncation below one cent.
+
+`node --test dashboard/analytics.test.mjs` passes seven tests for frequency-weighted statistics, inclusive filter boundaries, comparison scope, empty hours, amount bands, empty selections, and CSV escaping. Node-based DOM interaction checks also passed for dataset loading, navigation, filters, comparison scope, search, validation, reset, and the data dialog. These interaction checks used a DOM implementation, not a visual browser.
+
+Visual browser QA was unavailable in the managed session because its browser-control tool was not exposed. No preview server or alternative browser-control route was started. The static assets, JavaScript syntax, calculations, DOM interactions, source reconciliation, and hosted deployment were checked; responsive layout still needs a visual browser check.
 
 ## Reproduce
 

@@ -19,6 +19,8 @@ The original Kaggle listing labels its license **“Database: Open Database, Con
 
 The repository's **MIT LICENSE applies to its code and original documentation**. It does not grant rights to, or replace the terms of, the external dataset. Raw CSVs and derived row-level databases are excluded from the archive and from Git. The included reports contain aggregate results, carry source attribution, and link to these terms. A download mirror is a distribution route, not a new data license.
 
+The interactive dashboard adds an aggregate database under `dashboard/data/transactions.json`, grouping amounts by elapsed hour and label while retaining transaction frequencies. This derivative is made available under ODbL 1.0 / DbCL 1.0, with its provenance and terms in `dashboard/data/README.md`. It is downloadable from the platform's Data & methodology dialog and the public source repository. The MIT code license does not apply to this JSON data file.
+
 Suggested dataset citation:
 
 Andrea Dal Pozzolo, Olivier Caelen, Reid A. Johnson, and Gianluca Bontempi. *Calibrating Probability with Undersampling for Unbalanced Classification*. IEEE Symposium on Computational Intelligence and Data Mining (CIDM), 2015.

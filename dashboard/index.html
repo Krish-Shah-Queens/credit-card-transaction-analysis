@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Explore 284,807 real credit card transactions. Filter transaction value, activity and fraud comparisons in an interactive open-source dashboard.">
+  <meta name="theme-color" content="#142c31">
+  <title>Ledger — Credit Card Transaction Explorer</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to analysis</a>
+  <svg class="icon-defs" aria-hidden="true"><defs>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+    <symbol id="i-activity" viewBox="0 0 24 24"><path d="M2 13h5l3-8 4 15 3-7h5"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="m12 3 8 3v6c0 5-8 9-8 9S4 17 4 12V6z"/><path d="m8 12 3 3 5-6"/></symbol>
+    <symbol id="i-table" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M10 10v10"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-5-5 5 5-5 5"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v1"/></symbol>
+    <symbol id="i-code" viewBox="0 0 24 24"><path d="m8 6-6 6 6 6m8-12 6 6-6 6m-3-15-2 18"/></symbol>
+  </defs></svg>
+  <aside class="sidebar">
+    <a class="brand" href="#overview" aria-label="Ledger overview"><span class="brand-mark"><i></i><i></i><i></i></span><span>ledger<span class="brand-dot">.</span></span></a>
+    <div class="workspace-label">YOUR ANALYTICS WORKSPACE</div>
+    <nav aria-label="Analysis views">
+      <button class="nav-item active" data-view="overview"><svg><use href="#i-grid"/></svg>Overview<span class="nav-marker"></span></button>
+      <button class="nav-item" data-view="activity"><svg><use href="#i-activity"/></svg>Transaction activity</button>
+      <button class="nav-item" data-view="fraud"><svg><use href="#i-shield"/></svg>Fraud comparison</button>
+      <button class="nav-item" data-view="explorer"><svg><use href="#i-table"/></svg>Data explorer</button>
+    </nav>
+    <div class="sidebar-dataset"><span class="small-label">CONNECTED DATASET</span><div class="dataset-icon"><svg><use href="#i-table"/></svg><span>ULB / Worldline<small>Credit card transactions</small></span></div><div class="dataset-health"><span class="status-dot"></span> Historical dataset <span>2013</span></div><div class="sidebar-count"><strong id="dataset-count">—</strong><span>real transactions</span></div><button class="text-button light" id="source-open">About this dataset <span>↗</span></button></div>
+    <div class="sidebar-bottom"><span class="open-badge">OPEN SOURCE</span><p>Real data. Clearer decisions.</p><a href="https://github.com/Krish-Shah-Queens/credit-card-transaction-analysis" target="_blank" rel="noopener"><svg><use href="#i-code"/></svg>View source on GitHub <span>↗</span></a></div>
+  </aside>
+  <div class="app-shell">
+    <header class="topbar"><div class="breadcrumb">Workspace <span>/</span> <strong id="breadcrumb-view">Overview</strong></div><div class="topbar-right"><span class="snapshot-pill"><span class="status-dot"></span>Full dataset · September 2013</span><span class="avatar" title="Credit Card Analysis">CC</span></div></header>
+    <main id="main" tabindex="-1">
+      <section class="page-heading"><div><span class="eyebrow">CREDIT CARD TRANSACTION ANALYSIS</span><h1 id="page-title">The big picture.</h1><p id="page-subtitle">Understand the value, rhythm, and risk behind every transaction.</p></div><div class="heading-actions"><button class="button button-ghost" id="reset-filters">Reset filters</button><button class="button button-primary" id="export"><svg><use href="#i-download"/></svg>Export data</button></div></section>
+      <form class="filters" id="filter-form" aria-label="Filter transaction data">
+        <div class="filter-heading"><svg><use href="#i-table"/></svg><span>FILTER DATA</span></div>
+        <label>From elapsed hour<select id="hour-from" name="from" aria-label="First elapsed hour"></select></label>
+        <label>Through elapsed hour<select id="hour-to" name="to" aria-label="Last elapsed hour"></select></label>
+        <label>Transaction label<select id="label-filter" name="label"><option value="all">All transactions</option><option value="0">Non-fraud only</option><option value="1">Fraud-labeled only</option></select></label>
+        <label>Minimum amount<input id="min-amount" type="number" min="0" step="0.01" value="0" aria-label="Minimum transaction amount"></label>
+        <label>Maximum amount<input id="max-amount" type="number" min="0" step="0.01" aria-label="Maximum transaction amount"></label>
+        <button class="button button-filter" type="submit">Apply <svg><use href="#i-arrow"/></svg></button>
+      </form>
+      <div class="result-context"><span id="filter-status" role="status" aria-live="polite">Loading and validating the external dataset…</span><span>Amounts in dataset units <button class="icon-button" id="units-info" aria-label="About amount units"><svg><use href="#i-info"/></svg></button></span></div>
+      <div id="error" role="alert" class="error-box" hidden></div>
+      <div id="content" aria-busy="true"><div class="loading-state"><span class="loader"></span><h2>Connecting the dots…</h2><p>Preparing the full external transaction dataset.</p></div></div>
+      <footer class="main-footer"><span><span class="status-dot"></span>ULB / Worldline · 284,807 observations · No synthetic data</span><button class="text-button" id="methodology-open">Data & methodology <svg><use href="#i-arrow"/></svg></button></footer>
+    </main>
+  </div>
+  <dialog id="methodology"><div class="dialog-heading"><span class="eyebrow">KNOW YOUR DATA</span><button class="icon-button close-dialog" aria-label="Close dataset information">✕</button></div><h2>The context behind the numbers.</h2><p>Real European credit card transactions from the ULB / Worldline dataset, observed over approximately two days in September 2013.</p><div id="source-facts"></div><h3>What the filters mean</h3><p>Hours count forward from the first transaction. They are not local times of day; the final hour is partial. Minimum and maximum amounts are inclusive. Fraud comparisons show both labels within the selected time and amount range, even when a single label is selected elsewhere.</p><h3>What you can conclude</h3><p>Amounts are transaction values, not measured revenue or financial losses. The CSV has no currency field, customer identifiers, merchant categories, or calendar timestamps. V1–V28 are anonymized PCA components. These observations cannot establish seasonal trends or explain causes of fraud.</p><h3>Quality & calculations</h3><p>Exact duplicate rows and zero amounts are retained. The interactive data groups identical amounts by elapsed hour and label; counts, sums, medians and percentiles are computed exactly from their frequencies. A “typical” transaction means the median. Undefined rates display a dash.</p><h3>Source & licenses</h3><p>Data: <a href="https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud" target="_blank" rel="noopener">Worldline and ULB Machine Learning Group</a>, via TensorFlow’s public mirror. Derived data remains under <a href="https://opendatacommons.org/licenses/odbl/1-0/" target="_blank" rel="noopener">ODbL 1.0</a> / <a href="https://opendatacommons.org/licenses/dbcl/1-0/" target="_blank" rel="noopener">DbCL 1.0</a>; application code is MIT. Dataset citation: Dal Pozzolo, Caelen, Johnson and Bontempi, <em>Calibrating Probability with Undersampling for Unbalanced Classification</em>, IEEE CIDM, 2015.</p><a class="button button-primary" href="data/transactions.json" download>Download the dashboard dataset <svg><use href="#i-download"/></svg></a></dialog>
+  <div id="toast" class="toast" role="status" hidden></div>
+  <script type="module" src="app.mjs"></script>
+</body>
+</html>
