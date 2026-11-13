@@ -67,3 +67,10 @@ export function csv(rows, headers) {
   const escape = value => '"' + String(value ?? '').replaceAll('"', '""') + '"';
   return [headers.map(escape).join(','), ...rows.map(row => row.map(escape).join(','))].join('\r\n');
 }
+
+export function evaluationMetrics(row) {
+  const [threshold, tp, fp, fn, tn] = row;
+  return {threshold,tp,fp,fn,tn,alerts:tp+fp,
+    precision:tp+fp ? 100*tp/(tp+fp) : null,
+    recall:tp+fn ? 100*tp/(tp+fn) : null};
+}

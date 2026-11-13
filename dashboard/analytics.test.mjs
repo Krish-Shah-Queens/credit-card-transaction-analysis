@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {calculate, summarize, csv} from './analytics.mjs';
+import {calculate, summarize, csv, evaluationMetrics} from './analytics.mjs';
 
 const groups = [[0,0,0,1], [1,1,10000,2], [3,0,100000,1]];
 const filters = {from:0,to:3,min:0,max:100000,label:'all'};
@@ -51,4 +51,11 @@ test('empty selections have zero counts and undefined summary measures',()=>{
 test('CSV escaping preserves quotes, commas and empty values',()=>{
   assert.equal(csv([['a,b','quoted "value"',null]],['first','second','third']),
     '"first","second","third"\r\n"a,b","quoted ""value""",""');
+});
+
+test('model flags are evaluated against separate source labels',()=>{
+  const m=evaluationMetrics([.5,54,10,20,56662]);
+  assert.equal(m.alerts,64);assert.equal(m.precision,84.375);
+  assert.ok(Math.abs(m.recall-72.97297297297297)<1e-8);
+  assert.equal(evaluationMetrics([1,0,0,74,56672]).precision,null);
 });

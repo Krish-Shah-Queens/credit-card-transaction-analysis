@@ -2,24 +2,31 @@
 
 An interactive analytics platform and beginner-friendly SQL and Python project using **284,807 real credit card transactions** from the ULB/Worldline dataset. Explore transaction value, typical amounts, changes in activity, and fraud-label comparisons with filters, searchable tables, and downloadable data.
 
-**[Open the live platform →](https://credit-card-transaction-explorer.delightfulcloak8.chatgpt.site)**
+The main dashboard is now a **Streamlit + Plotly + DuckDB** application, following the stack used in comparable Python/SQL portfolio projects. It adds a separately evaluated fraud model, a threshold simulator, a confusion matrix, and CSV scoring. Read the [dashboard research](docs/DASHBOARD_RESEARCH.md) and [model card](docs/MODEL_CARD.md) for the sources and methodology.
 
-Use **Overview** to see totals and typical amounts, **Transaction activity** to investigate hourly increases and decreases, **Fraud comparison** to compare both labels, and **Data explorer** to search exact amount groups. Set time and amount filters and click **Apply**; all values are calculated from the external dataset. The hosted copy may ask you to sign in with its owner's ChatGPT account.
+**[Open the hosted browser preview →](https://credit-card-transaction-explorer.delightfulcloak8.chatgpt.site)**
 
-To run your own dashboard in Codespaces or on your computer, no dependency installation or dataset download is needed:
+The preview includes historical analysis and saved model-evaluation results. It is a separate HTML/JavaScript app hosted on Sites, not the Streamlit Python server. The full Python app also scores compatible uploaded ULB-format feature CSVs.
+
+## Open the Python dashboard
+
+In your existing Codespace, run these command lines in the terminal:
 
 ```bash
-python -m http.server 8000 --directory dashboard
+git pull
+bash scripts/run_dashboard.sh
 ```
 
-In Codespaces, open **Ports → 8000 → Open in Browser**. Locally, visit http://localhost:8000 . See [dashboard/README.md](dashboard/README.md) for filters, exports, calculations, and rebuilding the bundled aggregate data.
+Then open **Ports → 8501 → Open in Browser**. The launcher installs dependencies and starts Streamlit; no dataset download or model training is required. For local setup and Streamlit Community Cloud deployment, see [STREAMLIT.md](docs/STREAMLIT.md). Publication to Community Cloud requires your own signed-in Streamlit account; no Streamlit-hosted URL is claimed yet.
+
+Source fraud labels come from the original `Class` field: **1 = fraud, 0 = non-fraud**. Predictions are a separate model score and flag, never replacements for those labels. The model was selected on validation data and evaluated on a later chronological holdout: **84.375% precision, 72.973% recall**, with 54 true positives, 10 false positives, and 20 missed fraud labels at the validation-selected threshold. These historical results do not establish future real-world performance.
 
 **Code and original documentation: MIT licensed. External data: separate ODbL/DbCL terms.** The raw CSV is downloaded from the public mirror used by TensorFlow's tutorial; it is not bundled or committed. The dashboard includes a reproducible, separately licensed aggregate derivative covering every source observation. There is no synthetic dataset or generator.
 
 ## Get the project
 
 - **Download it:** [Download ZIP](https://github.com/Krish-Shah-Queens/credit-card-transaction-analysis/archive/refs/heads/main.zip), extract it, and follow the quick start below.
-- **Use your browser:** [Open in GitHub Codespaces](https://codespaces.new/Krish-Shah-Queens/credit-card-transaction-analysis). Create the codespace, wait for dependency setup, then run the three Python scripts in its terminal. You can open the notebook in the same browser editor.
+- **Use your browser:** [Open in GitHub Codespaces](https://codespaces.new/Krish-Shah-Queens/credit-card-transaction-analysis). Create the codespace, wait for dependency setup, then run `bash scripts/run_dashboard.sh` in its terminal. You can open the notebook in the same browser editor.
 - **Read the results first:** [Example findings](reports/example/findings.md) and [executed notebook](notebooks/01_credit_card_analysis.ipynb).
 
 The Codespaces configuration installs the project libraries automatically. To run the analysis there:
@@ -39,7 +46,7 @@ python scripts/analyze.py
 - Explain fraud rates, skewed amounts, and precision versus recall.
 - Make a reproducible open-source project with tests and GitHub Actions.
 
-The analysis covers all source rows. DuckDB does the large-table work; Python receives aggregated results. This is a descriptive analysis project, not a fraud prediction service.
+The analysis covers all source rows. DuckDB does the large-table work; Python receives aggregated results. Descriptive analysis and educational model predictions are separate; source labels remain unchanged.
 
 ## Quick start
 
@@ -126,7 +133,10 @@ The included example report was generated from the complete external CSV, not a 
 
 ```text
 scripts/                 Download, validate/build, analyze; shared paths
-dashboard/               Interactive platform, browser analytics, aggregate data
+streamlit_app.py         Primary Python dashboard: Streamlit + Plotly
+platform_logic.py        Shared weighted-summary and model-evaluation calculations
+models/                  Saved detector and provenance
+dashboard/               Hosted browser preview, aggregate data, model evaluation
 sql/                     Seven commented SQL lessons
 notebooks/               Guided SQL + Python walkthrough
 docs/                    Source terms, dictionary, exercises, publication guide
@@ -148,7 +158,7 @@ python -m pytest -q
 
 Tests use tiny hand-authored fixtures and run offline. They check validation failures, duplicate policy, amount-band boundaries, aggregate conservation, window functions, and precision/recall denominators. Full dataset and notebook verification are described in [VALIDATION.md](docs/VALIDATION.md).
 
-The dashboard also has seven browser-calculation tests. Run them with `node --test dashboard/analytics.test.mjs` using Node 22 or later. CI checks both Python and dashboard calculations. The static image reports remain available as an optional learning artifact; the platform is the primary interactive experience.
+The browser preview also has eight calculation tests. Python tests cover model leakage controls, saved-artifact integrity, chronological splits, and Streamlit page/threshold interactions. Run them with `node --test dashboard/analytics.test.mjs` using Node 22 or later. CI checks both Python and browser calculations. The static image reports remain available as an optional learning artifact; the platform is the primary interactive experience.
 
 First contributions are welcome: improve explanations, add a useful SQL question, or fix a reproducible bug. See [CONTRIBUTING.md](CONTRIBUTING.md).
 

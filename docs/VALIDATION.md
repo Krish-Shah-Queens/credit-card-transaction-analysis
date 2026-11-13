@@ -45,6 +45,14 @@ The dashboard represents all 284,807 source observations in 126,501 `(elapsed ho
 
 Visual browser QA was unavailable in the managed session because its browser-control tool was not exposed. No preview server or alternative browser-control route was started. The static assets, JavaScript syntax, calculations, DOM interactions, source reconciliation, and hosted deployment were checked; responsive layout still needs a visual browser check.
 
+## Streamlit application and predictive extension
+
+The Python suite now passes **28 tests**, including training/validation/test separation, target and time exclusion from features, invalid-input rejection, inclusive score thresholds, saved-artifact hash checks, and frequency-weighted summaries. Streamlit's AppTest ran all seven pages, changed the model threshold, checked that source analysis counts and filters survived navigation, and exercised an empty filter selection without a server or browser.
+
+The browser-preview suite passes **eight tests**, including confusion-count and precision/recall calculations. DOM checks additionally exercised the model slider, validation-threshold reset, and the model page's fixed filter scope. A visual browser test remains unverified; AppTest and DOM tests do not validate browser layout.
+
+The training pipeline was executed on the external source: two candidate models were fit only on the chronological training split, selected by validation average precision, and evaluated on the later holdout. At the validation-selected threshold, the held-out confusion counts are 54 true positives, 10 false positives, 20 false negatives, and 56,662 true negatives. The full protocol, limitations, and source/model label distinction are recorded in [MODEL_CARD.md](MODEL_CARD.md).
+
 ## Reproduce
 
 ```bash

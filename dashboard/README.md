@@ -1,8 +1,8 @@
-# Ledger — interactive transaction explorer
+# Ledger — browser preview
 
 **[Open the hosted platform](https://credit-card-transaction-explorer.delightfulcloak8.chatgpt.site)**. The hosted copy keeps its owner's Site access settings. Anyone can use the public source to run their own copy with the steps below.
 
-A browser-based platform answering three questions with the complete external ULB/Worldline dataset:
+The main Python app is `streamlit_app.py` (see [STREAMLIT.md](../docs/STREAMLIT.md)). This separate browser preview answers three analysis questions with the complete external ULB/Worldline dataset:
 
 1. How much transaction value is represented, and what is a typical transaction?
 2. During which elapsed hours does activity increase, decrease, or peak?
@@ -21,7 +21,7 @@ In Codespaces, open the **Ports** tab and choose **Open in Browser** for port 80
 ## Use the platform
 
 - Choose an elapsed-hour range, label, and inclusive amount range; click **Apply**.
-- Switch between Overview, Transaction activity, Fraud comparison, and Data explorer.
+- Switch between Overview, Transaction activity, source-label comparison, Model evaluation, and Data explorer. Model evaluation uses the complete fixed holdout, independently of the analysis filters.
 - Change the activity measure among transaction count, total amount, and fraud rate. Hover or focus bars for details; activate a bar to filter to that hour.
 - Read every hour's exact counts and changes in the activity table.
 - Compare both labels using transaction count, totals, mean, median, 95th percentile, maximum, and zero-amount shares.
@@ -33,12 +33,15 @@ The label filter affects Overview, Activity, and Explorer. Fraud comparison inte
 
 Amounts remain in integer cents for aggregation. Medians and percentiles use the weighted amount distribution with linear interpolation, matching DuckDB's continuous quantiles. Undefined metrics display a dash. First and final source windows can be partial. The historical source is not a live processing feed.
 
+The Model evaluation page includes a threshold slider, exact confusion counts, a baseline, and selected held-out examples. It displays saved evaluations; the separate Streamlit app can also score uploaded features using the saved detector.
+
 ## Rebuild from the external source
 
 ```bash
 python scripts/download_data.py
 python scripts/build_database.py
 python scripts/export_dashboard.py
+python scripts/train_fraud_model.py
 ```
 
 The committed aggregate JSON is about 1.8 MB. Its provenance and metadata let the browser reconcile source row counts and exact total amount before showing results.
@@ -51,3 +54,5 @@ python -m pytest -q
 ```
 
 Code: MIT. Dataset derivative: ODbL 1.0 / DbCL 1.0, separately documented in [data/README.md](data/README.md).
+
+The derived `model_evaluation.json` report and its selected source examples retain the same source attribution and ODbL / DbCL terms as the aggregate dataset.

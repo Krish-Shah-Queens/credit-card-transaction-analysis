@@ -1,4 +1,4 @@
-import {calculate, csv} from './analytics.mjs';
+import {calculate, csv, evaluationMetrics} from './analytics.mjs';
 
 const $ = selector => document.querySelector(selector);
 const integer = new Intl.NumberFormat('en-US');
@@ -9,14 +9,15 @@ const n = value => integer.format(value);
 const amount = cents => cents === null || !Number.isFinite(cents) ? '—' : money.format(cents / 100);
 const pct = (value, digits = 2) => value === null || !Number.isFinite(value) ? '—' : `${value.toFixed(digits)}%`;
 const icon = name => `<svg aria-hidden="true"><use href="#i-${name}"/></svg>`;
-const labelPill = isFraud => `<span class="label-pill ${isFraud ? 'fraud' : ''}">${isFraud ? 'Fraud-labeled' : 'Non-fraud'}</span>`;
+const labelPill = isFraud => `<span class="label-pill ${isFraud ? 'fraud' : ''}" title="Original dataset Class = ${isFraud ? 1 : 0}; not a model prediction">${isFraud ? 'Source: fraud' : 'Source: non-fraud'}</span>`;
 const viewInfo = {
-  overview: ['Overview', 'The big picture.', 'Understand the value, rhythm, and risk behind every transaction.'],
-  activity: ['Transaction activity', 'Find the rhythm.', 'See exactly when transaction activity increases, slows down, or peaks.'],
-  fraud: ['Fraud comparison', 'Look beyond the label.', 'Compare amounts, distributions, and transaction sizes across both labels.'],
-  explorer: ['Data explorer', 'Go a little deeper.', 'Search and explore the exact amount groups behind your analysis.'],
+  overview: ['Overview', 'Payments overview', 'Transaction value, activity, and historical source labels in one place.'],
+  activity: ['Transaction activity', 'Transaction activity', 'Explore hourly volumes and inspect the changes behind each peak.'],
+  fraud: ['Source fraud labels', 'Historical fraud labels', 'Compare the original Class labels. These are not model predictions.'],
+  model: ['Model evaluation', 'Evaluate model predictions', 'Explore the tradeoff between catching fraud labels and creating false alerts.'],
+  explorer: ['Data explorer', 'Transaction explorer', 'Search, sort, and export the amount groups behind the analysis.'],
 };
-let dataset, results, filters, sourceMaximum, sourceLastHour;
+let dataset, results, filters, sourceMaximum, sourceLastHour, modelReport, modelThresholdIndex;
 let view = 'overview', chartMetric = 'count', search = '', sort = 'amount-desc', page = 1;
 const pageSize = 20;
 let toastTimer;
@@ -88,6 +89,25 @@ function overview() {
   const peak = results.hours.reduce((a,b)=> b.count > a.count ? b : a);
   const skew = s.count && s.mean > s.median ? 'A smaller number of large amounts lift the average above the median.' : 'Compare the mean with the median to understand transaction size.';
   return `${stats()}${s.count ? '' : emptyState()}<div class="panel-grid">${activityPanel()}<section class="panel insight-panel"><div class="panel-heading"><div class="insight-eyebrow"><span>✧</span> THE STORY IN YOUR DATA</div></div><div class="panel-body"><p class="insight-main">${s.count ? `The middle transaction is <strong>${amount(s.median)}</strong>.` : 'No transactions match this selection.'}</p><p class="insight-copy">${s.count ? `The average is ${amount(s.mean)}. ${skew}` : 'Widen the time or amount range, or reset the filters to explore the full dataset.'}</p><div class="insight-divider">${icon('info')}<span>${s.count ? `Activity peaks in elapsed hour ${peak.hour}, with ${n(peak.count)} transactions in your selection. This is an observed pattern, not a forecast.` : 'Every view uses the same selected time and amount range.'}</span></div></div></section></div><div class="panel-grid bottom-grid">${amountPanel()}${comparisonPreview()}</div>`;
+}
+
+function labelExplanation() {
+  return `<section class="label-provenance"><div>${icon('shield')}<strong>Where do the fraud labels come from?</strong></div><p>The external dataset provides <code>Class</code>: <strong>1 = fraud</strong>, <strong>0 = non-fraud</strong>. We preserve it as <code>is_fraud</code>. The source does not document each case's investigation. Model flags are shown separately under <button class="text-button" data-go="model">Model evaluation ${icon('arrow')}</button>.</p></section>`;
+}
+
+function modelDetails() {
+  const r=modelReport,m=evaluationMetrics(r.test_curve[modelThresholdIndex]);
+  return `<div class="kpi-grid">
+    ${kpi('Predicted alerts',n(m.alerts),`${n(m.tp)} source fraud · ${n(m.fp)} source non-fraud`,'Model flags · not confirmed cases','shield')}
+    ${kpi('Precision',pct(m.precision,2),'Fraud labels among all model alerts','Higher precision means fewer false alerts','grid')}
+    ${kpi('Recall',pct(m.recall,2),`${n(m.tp)} of ${n(m.tp+m.fn)} fraud labels caught`,'Higher recall means fewer missed labels','activity')}
+    ${kpi('Missed fraud labels',n(m.fn),'Source Class 1 · model did not flag','False negatives on the test period','shield',true)}
+  </div><div class="panel-grid equal"><section class="panel"><div class="panel-heading"><div><h2>Predictions versus source labels</h2><p>Every transaction in the chronological test set.</p></div></div><div class="table-wrap"><table><thead><tr><th>Original source label</th><th class="numeric">Not flagged</th><th class="numeric">Flagged by model</th></tr></thead><tbody><tr><td>${labelPill(0)}</td><td class="numeric">${n(m.tn)}<small class="cell-note">True negatives</small></td><td class="numeric">${n(m.fp)}<small class="cell-note">False positives</small></td></tr><tr><td>${labelPill(1)}</td><td class="numeric">${n(m.fn)}<small class="cell-note">False negatives</small></td><td class="numeric">${n(m.tp)}<small class="cell-note">True positives</small></td></tr></tbody></table></div><div class="table-note">Source labels and model flags are independent columns. A model flag never changes a source label.</div></section><section class="panel"><div class="panel-heading"><div><h2>Why accuracy alone is misleading</h2><p>A baseline that never flags a transaction.</p></div></div><div class="panel-body"><div class="baseline-number">${pct(100*r.always_non_fraud_baseline.accuracy,2)}<span>accuracy · always predict non-fraud</span></div><p class="insight-copy">That baseline catches <strong>zero</strong> fraud labels and misses all <strong>${n(r.splits.test.source_fraud_count)}</strong> in the test set. Use precision, recall, and false alerts to understand performance.</p><div class="mini-band-row">Selected model test average precision: <strong>${r.test_average_precision.toFixed(4)}</strong>.<br>Test fraud prevalence: ${pct(100*r.test_prevalence,4)}. Average precision summarizes the ranked scores, not accuracy.</div></div></section></div><section class="panel"><div class="panel-heading"><div><h2>Review held-out examples</h2><p>Examples selected across the original operating point's outcomes; this is not a representative sample.</p></div></div><div class="table-wrap"><table><thead><tr><th>Local example</th><th>Elapsed hour</th><th class="numeric">Amount</th><th>Original source label</th><th class="numeric">Model score</th><th>Model decision</th></tr></thead><tbody>${r.examples.map(e=>`<tr><td>${esc(e.example_id)}</td><td>Hour ${e.elapsed_hour}</td><td class="numeric">${money.format(e.amount)}</td><td>${labelPill(e.source_label)}</td><td class="numeric">${e.model_score.toFixed(6)}</td><td><span class="prediction-pill ${e.model_score>=m.threshold?'flagged':''}">${e.model_score>=m.threshold?'Flag for review':'Not flagged'}</span></td></tr>`).join('')}</tbody></table></div></section>`;
+}
+
+function modelView() {
+  const r=modelReport;
+  return `<div class="notice">${icon('info')}<span><strong>${esc(r.model_name)}</strong> · ${n(r.splits.test.count)} held-out observations. These are predictions on historical data, not newly confirmed fraud. Analysis filters do not apply to this fixed test set.</span></div><section class="panel model-threshold"><div><h2>Choose a model operating threshold</h2><p>Flag when model score ≥ threshold. Scores are not calibrated probabilities.</p></div><label for="model-threshold">Threshold <strong id="threshold-readout">${r.test_curve[modelThresholdIndex][0].toFixed(3)}</strong></label><input id="model-threshold" type="range" min="0" max="1000" step="1" value="${modelThresholdIndex}" aria-label="Model flag threshold"><button class="button button-ghost" id="use-validation-threshold">Use validation threshold · ${r.recommended_threshold.toFixed(3)}</button><p class="threshold-note">The default maximizes F2 on validation data. Moving the slider explores the test results; it is not a fresh unbiased evaluation.</p></section><div id="model-details">${modelDetails()}</div><section class="panel training-panel"><div class="panel-heading"><div><h2>Trained on the past. Tested on a later period.</h2><p>No random mixing of earlier and later observations.</p></div></div><div class="split-timeline">${Object.entries(r.splits).map(([name,s])=>`<div><span>${name.toUpperCase()}</span><strong>${n(s.count)}</strong><small>${n(s.source_fraud_count)} source fraud labels · seconds ${n(s.first_second)}–${n(s.last_second)}</small></div>`).join('')}</div><div class="panel-body"><p class="insight-copy">Exact source duplicates were removed for modeling (${n(r.split_info.exact_duplicate_rows_removed)} rows). The descriptive analysis still retains all original observations. Equal timestamps stay in one split. Model selection uses validation average precision; the test set is not used for selection.</p><p class="insight-copy">Features: V1–V28 and log-transformed Amount. <strong>Class and Time are excluded from model input.</strong> The PCA features are anonymized, so individual scores cannot be translated into claims about a customer or merchant.</p><details><summary>Limitations and reproducibility</summary><ul>${r.limitations.map(x=>`<li>${esc(x)}</li>`).join('')}</ul><p>Train the same pipeline with <code>python scripts/train_fraud_model.py</code>. The full Streamlit app includes CSV scoring with the saved model.</p></details></div></section>`;
 }
 
 function emptyState() {
@@ -166,9 +186,14 @@ function render() {
     b.classList.toggle('active',b.dataset.view===view);
     if(b.dataset.view===view) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current');
   });
+  $('#filter-form').hidden=view==='model';
+  $('#period-shortcuts').hidden=view==='model';
+  $('#reset-filters').hidden=view==='model';
   const count = view==='fraud' ? results.baseCount : results.summary.count;
   $('#filter-status').innerHTML = `<strong>${n(count)} transactions</strong> · elapsed hours ${filters.from}–${filters.to}${view==='fraud'?' · both labels compared':filters.label==='all'?' · all labels':filters.label==='1'?' · fraud-labeled only':' · non-fraud only'}`;
-  $('#content').innerHTML = {overview,activity,fraud,explorer}[view]();
+  if(view==='model') $('#filter-status').textContent=`${n(modelReport.splits.test.count)} held-out observations · fixed chronological test period`;
+  $('#content').innerHTML = `${view==='fraud'?labelExplanation():''}${{overview,activity,fraud,model:modelView,explorer}[view]()}`;
+  document.querySelectorAll('[data-period]').forEach(b=>b.classList.toggle('selected',filters.from===Number(b.dataset.from)&&filters.to===Number(b.dataset.to)));
   $('#content').setAttribute('aria-busy','false');
   if(view==='explorer') updateExplorer();
 }
@@ -207,7 +232,10 @@ function exportData() {
   if(!results)return;
   const provenance=['ULB/Worldline 2013','https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud','ODbL 1.0 / DbCL 1.0'];
   let headers,rows;
-  if(view==='explorer'){
+  if(view==='model'){
+    headers=['threshold','true_positives','false_positives','false_negatives','true_negatives','source_dataset','source_url','data_license'];
+    rows=modelReport.test_curve.map(row=>[...row,...provenance]);
+  }else if(view==='explorer'){
     headers=['elapsed_hour','label','amount_dataset_units','transaction_count','group_total_amount', 'source_dataset','source_url','data_license'];
     rows=explorerRows().map(([h,label,cents,count])=>[h,label?'fraud':'non-fraud',(cents/100).toFixed(2),count,(cents*count/100).toFixed(2),...provenance]);
   }else if(view==='fraud'){
@@ -234,8 +262,10 @@ $('#filter-form').addEventListener('submit',applyFilters);
 $('#reset-filters').addEventListener('click',resetFilters);
 $('#export').addEventListener('click',exportData);
 document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>changeView(b.dataset.view)));
+document.querySelectorAll('[data-period]').forEach(b=>b.addEventListener('click',()=>{$('#hour-from').value=b.dataset.from;$('#hour-to').value=b.dataset.to;applyFilters();}));
 $('#content').addEventListener('click',event=>{
   const go=event.target.closest('[data-go]');if(go){changeView(go.dataset.go);return;}
+  if(event.target.closest('#use-validation-threshold')){modelThresholdIndex=modelReport.recommended_index;render();return;}
   const hour=event.target.closest('[data-hour]');if(hour){$('#hour-from').value=hour.dataset.hour;$('#hour-to').value=hour.dataset.hour;applyFilters();return;}
   if(event.target.closest('[data-reset]')){resetFilters();return;}
   if(event.target.closest('#previous-page')){page--;updateExplorer();}
@@ -246,14 +276,19 @@ $('#content').addEventListener('change',event=>{
   if(event.target.id==='chart-metric'){chartMetric=event.target.value;render();}
   if(event.target.id==='explorer-sort'){sort=event.target.value;page=1;updateExplorer();}
 });
-$('#content').addEventListener('input',event=>{if(event.target.id==='explorer-search'){search=event.target.value;page=1;updateExplorer();}});
+$('#content').addEventListener('input',event=>{
+  if(event.target.id==='explorer-search'){search=event.target.value;page=1;updateExplorer();}
+  if(event.target.id==='model-threshold'){modelThresholdIndex=Number(event.target.value);$('#threshold-readout').textContent=modelReport.test_curve[modelThresholdIndex][0].toFixed(3);$('#model-details').innerHTML=modelDetails();}
+});
 window.addEventListener('hashchange',()=>changeView(location.hash.slice(1)));
 
 async function start() {
   const controls=[...document.querySelectorAll('#filter-form input,#filter-form select,#filter-form button,#export,#reset-filters')];
   controls.forEach(c=>c.disabled=true);
   try{
-    const response=await fetch('./data/transactions.json');
+    const [response,modelResponse]=await Promise.all([fetch('./data/transactions.json'),fetch('./data/model_evaluation.json')]);
+    if(!modelResponse.ok)throw new Error('The model evaluation report could not be loaded.');
+    modelReport=await modelResponse.json();modelThresholdIndex=modelReport.recommended_index;
     if(!response.ok)throw new Error(`Dataset request failed (${response.status}).`);
     const data=await response.json();
     if(data.schema_version!==1||!Array.isArray(data.groups)||!data.groups.length)throw new Error('The dashboard data has an unsupported format.');

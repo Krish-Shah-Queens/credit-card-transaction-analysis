@@ -9,3 +9,5 @@ Each group is `[elapsed_hour, is_fraud, amount_cents, transaction_count]`. Group
 The full dashboard data is available from the site's Data & methodology dialog and this repository. Reproduce it with `python scripts/export_dashboard.py` after building the local DuckDB database. The source URL, source SHA-256, row count, and total amount are embedded in the JSON.
 
 Dataset citation: Andrea Dal Pozzolo, Olivier Caelen, Reid A. Johnson, and Gianluca Bontempi. *Calibrating Probability with Undersampling for Unbalanced Classification*. IEEE CIDM, 2015.
+
+`model_evaluation.json` contains the project-generated model evaluation, source provenance, confusion-count curve, and selected held-out examples. Dataset-derived examples retain these source terms. Source labels and model predictions are separate. See [MODEL_CARD.md](../../docs/MODEL_CARD.md).
