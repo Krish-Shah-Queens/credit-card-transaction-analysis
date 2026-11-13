@@ -1,0 +1,4 @@
+threshold_amount,alert_count,true_positives,total_fraud,total_transactions,false_positives,false_negatives,precision_pct,recall_pct,alert_rate_pct
+100,57385,130,492.0,284807,57255,362.0,0.2265,26.4228,20.1487
+500,9492,35,492.0,284807,9457,457.0,0.3687,7.1138,3.3328
+1000,3069,9,492.0,284807,3060,483.0,0.2933,1.8293,1.0776

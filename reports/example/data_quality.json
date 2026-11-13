@@ -1,0 +1,10 @@
+{
+  "row_count": 284807,
+  "missing_or_nonfinite_rows": 0,
+  "negative_rows": 0,
+  "invalid_label_rows": 0,
+  "zero_amount_rows": 1825,
+  "exact_duplicate_extra_rows": 1081,
+  "source_sha256": "76274b691b16a6c49d3f159c883398e03ccd6d1ee12d9d8ee38f4b4b98551a89",
+  "duplicate_policy": "Retained; source has no transaction identifiers."
+}

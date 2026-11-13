@@ -1,0 +1,2 @@
+transaction_count,fraud_count,fraud_rate_pct,total_amount,mean_amount,median_amount,maximum_amount,first_elapsed_second,last_elapsed_second
+284807,492.0,0.172749,25162590.01,88.35,22.0,25691.16,0.0,172792.0
